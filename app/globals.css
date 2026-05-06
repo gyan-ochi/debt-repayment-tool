@@ -129,6 +129,10 @@ textarea {
   align-self: start;
 }
 
+.reset-panel .panel__header {
+  align-items: center;
+}
+
 .panel__header {
   display: flex;
   justify-content: space-between;

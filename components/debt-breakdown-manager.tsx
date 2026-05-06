@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { getEstimatedMonthlyInterest } from "@/lib/debt-utils";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import { DebtBreakdownSummary, DebtItem } from "@/lib/types";
+import { DebtBreakdownSummary, DebtItem, DebtItemInput } from "@/lib/types";
 
 type DebtBreakdownManagerProps = {
   items: DebtItem[];
   summary: DebtBreakdownSummary;
+  onSave: (id: number | null, item: DebtItemInput) => string;
+  onDelete: (id: number) => string;
 };
 
 type FormState = {
@@ -26,8 +27,7 @@ const emptyForm: FormState = {
   minimum_payment: ""
 };
 
-export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerProps) {
-  const router = useRouter();
+export function DebtBreakdownManager({ items, summary, onSave, onDelete }: DebtBreakdownManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [message, setMessage] = useState("");
@@ -61,43 +61,37 @@ export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerPro
     setForm(emptyForm);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setMessage("");
     setError("");
 
-    const payload = {
+    const payload: DebtItemInput = {
       lender_name: form.lender_name,
       balance: Number(form.balance),
       annual_interest_rate: Number(form.annual_interest_rate),
       minimum_payment: Number(form.minimum_payment)
     };
 
-    const url = editingId === null ? "/api/debt-items" : `/api/debt-items/${editingId}`;
-    const method = editingId === null ? "POST" : "PUT";
-
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const result = (await response.json()) as { message?: string; error?: string };
-
-    if (!response.ok) {
-      setError(result.error ?? "保存に失敗しました。");
+    if (!payload.lender_name.trim()) {
+      setError("借入先名を入れてください。");
       setSaving(false);
       return;
     }
 
-    setMessage(result.message ?? "保存しました。");
+    if ([payload.balance, payload.annual_interest_rate, payload.minimum_payment].some((value) => Number.isNaN(value) || value < 0)) {
+      setError("残高・金利・最低返済額は0以上で入力してください。");
+      setSaving(false);
+      return;
+    }
+
+    setMessage(onSave(editingId, payload));
     resetForm();
-    router.refresh();
     setSaving(false);
   }
 
-  async function handleDelete(item: DebtItem) {
+  function handleDelete(item: DebtItem) {
     const confirmed = window.confirm(`「${item.lender_name}」を削除しますか？`);
     if (!confirmed) {
       return;
@@ -107,25 +101,12 @@ export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerPro
     setMessage("");
     setError("");
 
-    const response = await fetch(`/api/debt-items/${item.id}`, {
-      method: "DELETE"
-    });
-
-    const result = (await response.json()) as { message?: string; error?: string };
-
-    if (!response.ok) {
-      setError(result.error ?? "削除に失敗しました。");
-      setDeletingId(null);
-      return;
-    }
-
     if (editingId === item.id) {
       resetForm();
     }
 
-    setMessage(result.message ?? "削除しました。");
+    setMessage(onDelete(item.id));
     setDeletingId(null);
-    router.refresh();
   }
 
   return (
@@ -134,7 +115,7 @@ export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerPro
         <div className="panel__header">
           <div>
             <h2 className="panel__title">借金内訳</h2>
-            <p className="panel__description">金利が高い順に並びます。1画面で確認と入力が完結します。</p>
+            <p className="panel__description">このブラウザに保存された借金内訳だけが表示されます。</p>
           </div>
         </div>
 
@@ -215,7 +196,7 @@ export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerPro
       <section className="panel">
         <div className="panel__header">
           <div>
-            <h2 className="panel__title">{editingId === null ? "借金追加" : "借金編集"}</h2>
+            <h2 className="panel__title">{editingId === null ? "借金を追加" : "借金を編集"}</h2>
             <p className="panel__description">
               {editingId === null ? "借入先、残高、金利、最低返済額だけ入力すれば使えます。" : "編集したら保存を押してください。"}
             </p>
@@ -281,7 +262,7 @@ export function DebtBreakdownManager({ items, summary }: DebtBreakdownManagerPro
                 </button>
               ) : null}
             </div>
-            <span className="hint">金利が高い順に自動で並びます。</span>
+            <span className="hint">このブラウザだけに保存されます。</span>
           </div>
         </form>
 

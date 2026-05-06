@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { DebtRecordInput } from "@/lib/types";
 
 type DailyEntryFormProps = {
   suggestedBalance: number;
+  onSave: (record: DebtRecordInput) => { message: string; nextBalance: number };
 };
 
 type FormState = {
@@ -17,8 +19,7 @@ type FormState = {
 
 const today = new Date().toISOString().slice(0, 10);
 
-export function DailyEntryForm({ suggestedBalance }: DailyEntryFormProps) {
-  const router = useRouter();
+export function DailyEntryForm({ suggestedBalance, onSave }: DailyEntryFormProps) {
   const [form, setForm] = useState<FormState>({
     date: today,
     income: "0",
@@ -31,40 +32,39 @@ export function DailyEntryForm({ suggestedBalance }: DailyEntryFormProps) {
   const [saving, setSaving] = useState(false);
   const [nextBalance, setNextBalance] = useState(suggestedBalance);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    setNextBalance(suggestedBalance);
+  }, [suggestedBalance]);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setMessage("");
     setError("");
 
-    const response = await fetch("/api/records", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: form.date,
-        income: Number(form.income),
-        expense: Number(form.expense),
-        repayment_amount: Number(form.repayment_amount),
-        memo: form.memo
-      })
-    });
-
-    const result = (await response.json()) as {
-      message?: string;
-      error?: string;
-      suggestedBalance?: number;
+    const payload: DebtRecordInput = {
+      date: form.date,
+      income: Number(form.income),
+      expense: Number(form.expense),
+      repayment_amount: Number(form.repayment_amount),
+      memo: form.memo
     };
 
-    if (!response.ok) {
-      setError(result.error ?? "保存に失敗しました。");
+    if (!payload.date) {
+      setError("日付を入れてください。");
       setSaving(false);
       return;
     }
 
-    setMessage(result.message ?? "保存しました。");
-    if (typeof result.suggestedBalance === "number") {
-      setNextBalance(result.suggestedBalance);
+    if ([payload.income, payload.expense, payload.repayment_amount].some((value) => Number.isNaN(value) || value < 0)) {
+      setError("収入・支出・返済額は0以上の数字で入力してください。");
+      setSaving(false);
+      return;
     }
+
+    const result = onSave(payload);
+    setMessage(result.message);
+    setNextBalance(result.nextBalance);
     setForm({
       date: form.date,
       income: "0",
@@ -72,7 +72,6 @@ export function DailyEntryForm({ suggestedBalance }: DailyEntryFormProps) {
       repayment_amount: "",
       memo: ""
     });
-    router.refresh();
     setSaving(false);
   }
 
@@ -143,7 +142,7 @@ export function DailyEntryForm({ suggestedBalance }: DailyEntryFormProps) {
           <button className="button" type="submit" disabled={saving}>
             {saving ? "保存中..." : "今日の記録を保存"}
           </button>
-          <span className="hint">同じ日付は上書き保存されるので、修正も簡単です。</span>
+          <span className="hint">このブラウザだけに保存されます。</span>
         </div>
       </form>
 

@@ -45,7 +45,7 @@ export function Charts({ data }: ChartsProps) {
         <div className="panel__header">
           <div>
             <h2 className="panel__title">支出推移</h2>
-            <p className="panel__description">無理なく支出を減らせているかを見られます。</p>
+            <p className="panel__description">支出の変化を棒グラフで確認できます。</p>
           </div>
         </div>
         <div className="chart-wrap">

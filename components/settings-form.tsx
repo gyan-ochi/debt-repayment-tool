@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { DebtSettings } from "@/lib/types";
+import { DebtSettings, DebtSettingsInput } from "@/lib/types";
 
-export function SettingsForm({ settings }: { settings: DebtSettings }) {
-  const router = useRouter();
+export function SettingsForm({
+  settings,
+  onSave
+}: {
+  settings: DebtSettings;
+  onSave: (settings: DebtSettingsInput) => string;
+}) {
   const [form, setForm] = useState({
     initial_debt: String(settings.initial_debt),
     current_balance: String(settings.current_balance),
@@ -17,32 +21,41 @@ export function SettingsForm({ settings }: { settings: DebtSettings }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    setForm({
+      initial_debt: String(settings.initial_debt),
+      current_balance: String(settings.current_balance),
+      monthly_payment: String(settings.monthly_payment),
+      gambling_start_date: settings.gambling_start_date ?? ""
+    });
+  }, [settings]);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setMessage("");
     setError("");
 
-    const response = await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        initial_debt: Number(form.initial_debt),
-        current_balance: Number(form.current_balance),
-        monthly_payment: Number(form.monthly_payment),
-        gambling_start_date: form.gambling_start_date || null
-      })
-    });
+    const payload: DebtSettingsInput = {
+      initial_debt: Number(form.initial_debt),
+      current_balance: Number(form.current_balance),
+      monthly_payment: Number(form.monthly_payment),
+      gambling_start_date: form.gambling_start_date || null
+    };
 
-    const result = (await response.json()) as { message?: string; error?: string };
-    if (!response.ok) {
-      setError(result.error ?? "保存に失敗しました。");
+    if ([payload.initial_debt, payload.current_balance, payload.monthly_payment].some((value) => Number.isNaN(value) || value < 0)) {
+      setError("借金設定は0以上の数字で入力してください。");
       setSaving(false);
       return;
     }
 
-    setMessage(result.message ?? "保存しました。");
-    router.refresh();
+    if (payload.current_balance > payload.initial_debt) {
+      setError("現在残高は初期借入額以下で入力してください。");
+      setSaving(false);
+      return;
+    }
+
+    setMessage(onSave(payload));
     setSaving(false);
   }
 
@@ -51,7 +64,7 @@ export function SettingsForm({ settings }: { settings: DebtSettings }) {
       <div className="panel__header">
         <div>
           <h2 className="panel__title">借金設定</h2>
-          <p className="panel__description">最初に一度入力しておけば、毎日の記録がかなり楽になります。</p>
+          <p className="panel__description">このブラウザ内だけで使う基本設定です。</p>
         </div>
       </div>
 
