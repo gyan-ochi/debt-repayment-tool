@@ -118,6 +118,7 @@ export function SettingsForm({
           <button className="button button--secondary" type="submit" disabled={saving}>
             {saving ? "保存中..." : "借金設定を保存"}
           </button>
+          <span className="hint">データはこの端末のブラウザにのみ保存されます。</span>
         </div>
       </form>
 

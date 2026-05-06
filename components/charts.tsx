@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { formatCurrency } from "@/lib/format";
 import { ChartPoint } from "@/lib/types";
 
 type ChartsProps = {
@@ -25,7 +16,7 @@ export function Charts({ data }: ChartsProps) {
         <div className="panel__header">
           <div>
             <h2 className="panel__title">借金の減少推移</h2>
-            <p className="panel__description">返済が進んでいるかを線で確認できます。</p>
+            <p className="panel__description">返済によって残高がどう変わったかを確認できます。</p>
           </div>
         </div>
         <div className="chart-wrap">
@@ -34,7 +25,7 @@ export function Charts({ data }: ChartsProps) {
               <CartesianGrid stroke="#ececec" vertical={false} />
               <XAxis dataKey="label" stroke="#6f6f6f" />
               <YAxis stroke="#6f6f6f" tickFormatter={(value) => `${Math.round(value / 10000)}万`} />
-              <Tooltip formatter={(value: number) => `¥${value.toLocaleString("ja-JP")}`} />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} />
               <Line type="monotone" dataKey="balance" stroke="#111111" strokeWidth={3} dot={{ r: 3 }} name="借金残高" />
             </LineChart>
           </ResponsiveContainer>
@@ -45,7 +36,7 @@ export function Charts({ data }: ChartsProps) {
         <div className="panel__header">
           <div>
             <h2 className="panel__title">支出推移</h2>
-            <p className="panel__description">支出の変化を棒グラフで確認できます。</p>
+            <p className="panel__description">支出の流れをシンプルに確認できます。</p>
           </div>
         </div>
         <div className="chart-wrap">
@@ -54,7 +45,7 @@ export function Charts({ data }: ChartsProps) {
               <CartesianGrid stroke="#ececec" vertical={false} />
               <XAxis dataKey="label" stroke="#6f6f6f" />
               <YAxis stroke="#6f6f6f" tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
-              <Tooltip formatter={(value: number) => `¥${value.toLocaleString("ja-JP")}`} />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} />
               <Bar dataKey="expense" fill="#7d7d7d" radius={[10, 10, 0, 0]} name="支出" />
             </BarChart>
           </ResponsiveContainer>

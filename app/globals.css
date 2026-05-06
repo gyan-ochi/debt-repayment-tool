@@ -82,6 +82,17 @@ textarea {
   line-height: 1.7;
 }
 
+.storage-notice {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .page-stack,
 .side-stack {
   display: grid;
@@ -426,5 +437,31 @@ td:last-child {
 
   .row-actions {
     min-width: 160px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell__inner {
+    padding: 20px 14px 48px;
+  }
+
+  .panel {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .tab-nav__item,
+  .button {
+    width: 100%;
+  }
+
+  .inline-actions,
+  .row-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  td:last-child {
+    min-width: 180px;
   }
 }

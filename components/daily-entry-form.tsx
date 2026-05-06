@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { formatCurrency } from "@/lib/format";
 import { DebtRecordInput } from "@/lib/types";
 
 type DailyEntryFormProps = {
@@ -80,11 +81,11 @@ export function DailyEntryForm({ suggestedBalance, onSave }: DailyEntryFormProps
       <div className="panel__header">
         <div>
           <h2 className="panel__title">今日の入力</h2>
-          <p className="panel__description">1日1回、必要な数字だけ入れれば大丈夫です。</p>
+          <p className="panel__description">1日1回、必要な数字だけ入れれば状況を確認できます。</p>
         </div>
         <div className="mini-note">
-          入力後の残高目安
-          <strong>¥{nextBalance.toLocaleString("ja-JP")}</strong>
+          入力後の借金残高
+          <strong>{formatCurrency(nextBalance)}</strong>
         </div>
       </div>
 
@@ -133,7 +134,7 @@ export function DailyEntryForm({ suggestedBalance, onSave }: DailyEntryFormProps
           <label htmlFor="memo">メモ</label>
           <textarea
             id="memo"
-            placeholder="例: コンビニを我慢できた、病院代がかかった など"
+            placeholder="例: コンビニ、病院、食費など"
             value={form.memo}
             onChange={(e) => setForm({ ...form, memo: e.target.value })}
           />
@@ -142,7 +143,7 @@ export function DailyEntryForm({ suggestedBalance, onSave }: DailyEntryFormProps
           <button className="button" type="submit" disabled={saving}>
             {saving ? "保存中..." : "今日の記録を保存"}
           </button>
-          <span className="hint">このブラウザだけに保存されます。</span>
+          <span className="hint">データはこの端末のブラウザにのみ保存されます。</span>
         </div>
       </form>
 

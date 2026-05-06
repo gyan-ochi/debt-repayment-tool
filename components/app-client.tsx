@@ -53,38 +53,28 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
   const [resetMessage, setResetMessage] = useState("");
 
   useEffect(() => {
-    const nextSettings = loadSettings(defaultSettings);
-    const nextRecords = loadRecords();
-    const nextDebtItems = sortDebtItems(loadDebtItems());
-
-    setSettingsState(nextSettings);
-    setRecords(nextRecords);
-    setDebtItems(nextDebtItems);
+    setSettingsState(loadSettings(defaultSettings));
+    setRecords(loadRecords());
+    setDebtItems(sortDebtItems(loadDebtItems()));
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
+    if (hydrated) {
+      saveSettings(settings);
     }
-
-    saveSettings(settings);
   }, [hydrated, settings]);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
+    if (hydrated) {
+      saveRecords(records);
     }
-
-    saveRecords(records);
   }, [hydrated, records]);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
+    if (hydrated) {
+      saveDebtItems(debtItems);
     }
-
-    saveDebtItems(debtItems);
   }, [hydrated, debtItems]);
 
   const summary = useMemo(() => getDashboardSummary(settings, records), [settings, records]);
@@ -144,6 +134,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
 
     const nextItems = sortDebtItems([nextItem, ...debtItems.filter((item) => item.id !== nextItem.id)]);
     setDebtItems(nextItems);
+
     return id === null ? "借金内訳を追加しました。" : "借金内訳を更新しました。";
   }
 
@@ -161,11 +152,11 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
 
     clearAllStoredData();
     setRecords([]);
+    setDebtItems([]);
     setSettingsState({
       ...defaultSettings,
       updated_at: new Date().toISOString()
     });
-    setDebtItems([]);
     setResetMessage("このブラウザの保存データを初期化しました。");
   }
 
@@ -182,7 +173,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
 
   return (
     <main className="page-stack">
-      <nav className="tab-nav" aria-label="画面切り替え">
+      <nav className="tab-nav" aria-label="画面の切り替え">
         {tabs.map((tab) => {
           const active = tab.key === initialTab;
           return (
@@ -199,7 +190,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
             <div className="panel__header">
               <div>
                 <h2 className="panel__title">このブラウザのデータ管理</h2>
-                <p className="panel__description">他のユーザーとは共有されません。必要ならここで初期化できます。</p>
+                <p className="panel__description">データはこの端末のブラウザにのみ保存されます。他のユーザーとは共有されません。</p>
               </div>
               <button className="button button--danger" type="button" onClick={handleResetAll}>
                 データを初期化
@@ -215,7 +206,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
               value={formatCurrency(summary.monthlyNet)}
               sub={`収入 ${formatCurrency(summary.monthlyIncome)} / 支出 ${formatCurrency(summary.monthlyExpense)}`}
             />
-            <MetricCard label="今日の支出" value={formatCurrency(summary.todayExpense)} sub="今日の記録から自動表示" />
+            <MetricCard label="今日の支出" value={formatCurrency(summary.todayExpense)} sub="今日の入力から自動表示" />
             <MetricCard label="ギャンブル断ち日数" value={`${formatNumber(summary.gamblingFreeDays)}日`} sub="開始日から自動計算" />
           </section>
 
@@ -233,7 +224,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
                   <strong>{formatCurrency(summary.monthlyPayment)}</strong>
                 </div>
                 <div>
-                  <span>今月の返済合計</span>
+                  <span>今月の返済入力</span>
                   <strong>{formatCurrency(summary.monthlyRepayment)}</strong>
                 </div>
                 <div>
@@ -247,7 +238,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
               <div className="panel__header">
                 <div>
                   <h2 className="panel__title">借金内訳の要点</h2>
-                  <p className="panel__description">このブラウザだけに保存された借金データを表示しています。</p>
+                  <p className="panel__description">高金利の借入先と利息の目安をここで確認できます。</p>
                 </div>
               </div>
               <div className="summary-list">
@@ -260,7 +251,7 @@ export function AppClient({ initialTab }: { initialTab: TabKey }) {
                   <strong>{formatCurrency(debtBreakdown.totalBalance)}</strong>
                 </div>
                 <div>
-                  <span>総利息の簡易表示</span>
+                  <span>月利息の目安</span>
                   <strong>{formatCurrency(debtBreakdown.totalEstimatedMonthlyInterest)}</strong>
                 </div>
               </div>

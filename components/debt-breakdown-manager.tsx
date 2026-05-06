@@ -68,13 +68,13 @@ export function DebtBreakdownManager({ items, summary, onSave, onDelete }: DebtB
     setError("");
 
     const payload: DebtItemInput = {
-      lender_name: form.lender_name,
+      lender_name: form.lender_name.trim(),
       balance: Number(form.balance),
       annual_interest_rate: Number(form.annual_interest_rate),
       minimum_payment: Number(form.minimum_payment)
     };
 
-    if (!payload.lender_name.trim()) {
+    if (!payload.lender_name) {
       setError("借入先名を入れてください。");
       setSaving(false);
       return;
@@ -109,13 +109,15 @@ export function DebtBreakdownManager({ items, summary, onSave, onDelete }: DebtB
     setDeletingId(null);
   }
 
+  const editingItem = editingId === null ? null : items.find((item) => item.id === editingId) ?? null;
+
   return (
     <section className="overview-grid">
       <section className="panel">
         <div className="panel__header">
           <div>
             <h2 className="panel__title">借金内訳</h2>
-            <p className="panel__description">このブラウザに保存された借金内訳だけが表示されます。</p>
+            <p className="panel__description">データはこの端末のブラウザにのみ保存されます。金利が高い順で表示しています。</p>
           </div>
         </div>
 
@@ -198,7 +200,9 @@ export function DebtBreakdownManager({ items, summary, onSave, onDelete }: DebtB
           <div>
             <h2 className="panel__title">{editingId === null ? "借金を追加" : "借金を編集"}</h2>
             <p className="panel__description">
-              {editingId === null ? "借入先、残高、金利、最低返済額だけ入力すれば使えます。" : "編集したら保存を押してください。"}
+              {editingId === null
+                ? "借入先・残高・金利・最低返済額だけを入れれば使えます。"
+                : "既存の値を読み込んでいます。修正したら保存で上書きされます。"}
             </p>
           </div>
         </div>
@@ -254,12 +258,22 @@ export function DebtBreakdownManager({ items, summary, onSave, onDelete }: DebtB
           <div className="field field--full field--actions">
             <div className="inline-actions">
               <button className="button button--secondary" type="submit" disabled={saving}>
-                {saving ? "保存中..." : editingId === null ? "借金を追加" : "編集を保存"}
+                {saving ? "保存中..." : editingId === null ? "借金を追加" : "保存して上書き"}
               </button>
               {editingId !== null ? (
-                <button className="button button--ghost" type="button" onClick={resetForm}>
-                  追加モードに戻す
-                </button>
+                <>
+                  <button className="button button--ghost" type="button" onClick={resetForm}>
+                    追加モードに戻す
+                  </button>
+                  <button
+                    className="button button--danger"
+                    type="button"
+                    onClick={() => (editingItem ? handleDelete(editingItem) : undefined)}
+                    disabled={editingItem === null || deletingId === editingId}
+                  >
+                    {deletingId === editingId ? "削除中..." : "この借金を削除"}
+                  </button>
+                </>
               ) : null}
             </div>
             <span className="hint">このブラウザだけに保存されます。</span>
